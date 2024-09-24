@@ -7,7 +7,6 @@ import jwt
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
 load_dotenv()
 
 app = FastAPI(title="Personal Finance Monitor")
@@ -100,7 +99,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-# For testing purposes only. In a real application, you'd use a database.
 fake_users_db = {
     "johndoe": {
         "username": "johndoe",
@@ -111,7 +109,6 @@ fake_users_db = {
     }
 }
 
-# Helper function (you'd use a real hashing function in production)
 def verify_password(plain_password, hashed_password):
     return plain_password + "notreallyhashed" == hashed_password
 
