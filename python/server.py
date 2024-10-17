@@ -9,6 +9,9 @@ from datetime import date, timedelta
 import uuid
 import uvicorn
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from auth import User, get_current_user, authenticate_user, create_access_token, Token, pwd_context, SessionLocal
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Form
 from fastapi.responses import JSONResponse
@@ -134,6 +137,31 @@ transfer_id = None
 user_token = None
 
 item_id = None
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/register")
+async def register(form_data: OAuth2PasswordRequestForm = Depends()):
+    db = SessionLocal()
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    hashed_password = pwd_context.hash(form_data.password)
+    new_user = User(username=form_data.username, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User created successfully"}
 
 
 @app.post("/api/info")
