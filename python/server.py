@@ -147,8 +147,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    jwt_token = create_access_token(data={"sub": user.username})
+    return {"access_token": jwt_token, "token_type": "bearer"}
 
 @app.post("/register")
 async def register(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -278,29 +278,10 @@ async def create_link_token():
 async def create_user_token():
     global user_token
     try:
-        consumer_report_user_identity = None
         user_create_request = UserCreateRequest(
             # Typically this will be a user ID number from your application. 
             client_user_id="user_" + str(uuid.uuid4())
         )
-
-        cra_products = ["cra_base_report", "cra_income_insights", "cra_partner_insights"]
-        if any(product in cra_products for product in PLAID_PRODUCTS):
-            consumer_report_user_identity = ConsumerReportUserIdentity(
-                first_name="Harry",
-                last_name="Potter",
-                phone_numbers=['+16174567890'],
-                emails=['harrypotter@example.com'],
-                primary_address={
-                    "city": 'New York',
-                    "region": 'NY',
-                    "street": '4 Privet Drive',
-                    "postal_code": '11111',
-                    "country": 'US'
-                }
-            )
-            user_create_request["consumer_report_user_identity"] = consumer_report_user_identity
-
         user_response = client.user_create(user_create_request)
         user_token = user_response['user_token']
         return JSONResponse(user_response.to_dict())
@@ -315,19 +296,29 @@ async def create_user_token():
 
 
 @app.post('/api/set_access_token')
-async def get_access_token(public_token: str = Form(...)):
+async def set_access_token(public_token: str = Form(...), current_user: User = Depends(get_current_user)):
     global access_token
     global item_id
     global transfer_id
+    db = None
     try:
         exchange_request = ItemPublicTokenExchangeRequest(
             public_token=public_token)
         exchange_response = client.item_public_token_exchange(exchange_request)
         access_token = exchange_response['access_token']
         item_id = exchange_response['item_id']
-        return JSONResponse(exchange_response.to_dict())
+
+        db = SessionLocal()
+        db_user = db.query(User).filter(User.id == current_user.id).first()
+        db_user.plaid_access_token = access_token
+        db.commit()
+        db.refresh(db_user)
+
+        return JSONResponse({"status": "success", "message": "Access token set successfully"})
     except plaid.ApiException as e:
-        raise HTTPException(status_code=400, detail=json.loads(e.body))
+        return JSONResponse(json.loads(e.body))
+    finally:
+        db.close()
 
 
 # Retrieve ACH or ETF account numbers for an Item

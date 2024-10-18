@@ -5,7 +5,7 @@ import Button from "plaid-threads/Button";
 import Context from "../../Context";
 
 const Link = () => {
-  const { linkToken, isPaymentInitiation, isCraProductsExclusively, dispatch } =
+  const { linkToken, isPaymentInitiation, isCraProductsExclusively, dispatch, jwtToken } =
     useContext(Context);
 
   const onSuccess = React.useCallback(
@@ -16,6 +16,7 @@ const Link = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTcyOTIyNTU4Nn0.odvW6Fj6Rl8niGJeDEGNJFt8wGcjSN24wF-snQiWkfo`,
           },
           body: `public_token=${public_token}`,
         });
@@ -54,7 +55,7 @@ const Link = () => {
       dispatch({ type: "SET_STATE", state: { linkSuccess: true } });
       window.history.pushState("", "", "/");
     },
-    [dispatch, isPaymentInitiation, isCraProductsExclusively]
+    [dispatch, isPaymentInitiation, isCraProductsExclusively, jwtToken]
   );
 
   let isOauth = false;

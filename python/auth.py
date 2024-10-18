@@ -28,6 +28,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     total_balance = Column(Float, default=0.0)
+    plaid_access_token = Column(String, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 

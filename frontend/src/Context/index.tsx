@@ -18,6 +18,7 @@ interface QuickstartState {
     error_code: string;
     error_type: string;
   };
+  jwtToken: string | null;
 }
 
 const initialState: QuickstartState = {
@@ -38,6 +39,7 @@ const initialState: QuickstartState = {
     error_code: "",
     error_message: "",
   },
+  jwtToken: null,
 };
 
 type QuickstartAction = {
