@@ -4,16 +4,24 @@ import Header from "./Components/Headers";
 import Products from "./Components/ProductTypes/Products";
 import Items from "./Components/ProductTypes/Items";
 import Context from "./Context";
+import Login from "./Components/Login";
+import { Route, Routes, Navigate } from "react-router-dom";
+
 
 import styles from "./App.module.scss";
 import { CraCheckReportProduct } from "plaid";
 
 const App = () => {
-  const { linkSuccess, isPaymentInitiation, itemId, dispatch } =
+  const { linkSuccess, isPaymentInitiation, itemId, dispatch, jwtToken } =
     useContext(Context);
 
   const getInfo = useCallback(async () => {
-    const response = await fetch("/api/info", { method: "POST" });
+    const response = await fetch("/api/info", { 
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
+      },
+    });
     if (!response.ok) {
       dispatch({ type: "SET_STATE", state: { backend: false } });
       return { paymentInitiation: false };
@@ -97,6 +105,7 @@ const App = () => {
   );
 
   useEffect(() => {
+    if (jwtToken) {
     const init = async () => {
       const { paymentInitiation, isUserTokenFlow } = await getInfo(); // used to determine which path to take when generating token
       // do not generate a new token for OAuth redirect; instead
@@ -117,19 +126,27 @@ const App = () => {
       generateToken(paymentInitiation);
     };
     init();
+    }
   }, [dispatch, generateToken, generateUserToken, getInfo]);
 
   return (
-    <div className={styles.App}>
-      <div className={styles.container}>
-        <Header />
-        {linkSuccess && (
-          <>
-            <Products />
-            {!isPaymentInitiation && itemId && <Items />}
-          </>
-        )}
-      </div>
+    <div className="App">
+      {!jwtToken ? (
+        <Login />
+      ) : (
+        <>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Products />} />
+            {linkSuccess && (
+              <Route
+                path="/items"
+                element={isPaymentInitiation ? <Navigate to="/" /> : <Items />}
+              />
+            )}
+          </Routes>
+        </>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import Context from "../../Context"; 
 import Button from "plaid-threads/Button";
 import Note from "plaid-threads/Note";
 
@@ -18,6 +19,8 @@ interface Props {
 }
 
 const Endpoint = (props: Props) => {
+  const { jwtToken } = useContext(Context);
+
   const [showTable, setShowTable] = useState(false);
   const [transformedData, setTransformedData] = useState<Data>([]);
   const [pdf, setPdf] = useState<string | null>(null);
@@ -26,7 +29,12 @@ const Endpoint = (props: Props) => {
 
   const getData = async () => {
     setIsLoading(true);
-    const response = await fetch(`/api/${props.endpoint}`, { method: "GET" });
+    const response = await fetch(`/api/${props.endpoint}`, { 
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+        },
+      });
     const data = await response.json();
     if (data.error != null) {
       setError(data.error);
