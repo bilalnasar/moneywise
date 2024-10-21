@@ -11,6 +11,7 @@ import uvicorn
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from auth import User, get_current_user, authenticate_user, create_access_token, Token, pwd_context, SessionLocal
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Form
@@ -49,6 +50,15 @@ load_dotenv()
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
 PLAID_SECRET = os.getenv('PLAID_SECRET')
@@ -98,18 +108,18 @@ for product in PLAID_PRODUCTS:
 
 # We store the access_token in memory - in production, store it in a secure
 # persistent data store.
-access_token = None
-# The payment_id is only relevant for the UK Payment Initiation product.
-# We store the payment_id in memory - in production, store it in a secure
-# persistent data store.
-payment_id = None
-# The transfer_id is only relevant for Transfer ACH product.
-# We store the transfer_id in memory - in production, store it in a secure
-# persistent data store.
-transfer_id = None
-# We store the user_token in memory - in production, store it in a secure
-# persistent data store.
-user_token = None
+# access_token = None
+# # The payment_id is only relevant for the UK Payment Initiation product.
+# # We store the payment_id in memory - in production, store it in a secure
+# # persistent data store.
+# payment_id = None
+# # The transfer_id is only relevant for Transfer ACH product.
+# # We store the transfer_id in memory - in production, store it in a secure
+# # persistent data store.
+# transfer_id = None
+# # We store the user_token in memory - in production, store it in a secure
+# # persistent data store.
+# user_token = None
 
 item_id = None
 
@@ -140,69 +150,18 @@ async def register(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @app.post("/api/info")
-async def info():
-    global access_token
-    global item_id
-    return JSONResponse({
-        'item_id': item_id,
-        'access_token': access_token,
-        'products': PLAID_PRODUCTS
-    })
-
-
-
-@app.post('/api/create_link_token_for_payment')
-async def create_link_token_for_payment():
-    global payment_id
+async def info(current_user: User = Depends(get_current_user)):
     try:
-        request = PaymentInitiationRecipientCreateRequest(
-            name='John Doe',
-            bacs=RecipientBACSNullable(account='26207729', sort_code='560029'),
-            address=PaymentInitiationAddress(
-                street=['street name 999'],
-                city='city',
-                postal_code='99999',
-                country='GB'
-            )
-        )
-        response = client.payment_initiation_recipient_create(request)
-        recipient_id = response['recipient_id']
-
-        request = PaymentInitiationPaymentCreateRequest(
-            recipient_id=recipient_id,
-            reference='TestPayment',
-            amount=PaymentAmount(
-                PaymentAmountCurrency('GBP'),
-                value=100.00
-            )
-        )
-        response = client.payment_initiation_payment_create(request)
-        pretty_print_response(response.to_dict())
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail=f"Plaid access token not found for user {current_user.username}")
         
-        # We store the payment_id in memory for demo purposes - in production, store it in a secure
-        # persistent data store along with the Payment metadata, such as userId.
-        payment_id = response['payment_id']
-        
-        linkRequest = LinkTokenCreateRequest(
-            products=[Products('payment_initiation')],
-            client_name='Plaid Test',
-            country_codes=list(map(lambda x: CountryCode(x), PLAID_COUNTRY_CODES)),
-            language='en',
-            user=LinkTokenCreateRequestUser(
-                client_user_id=str(time.time())
-            ),
-            payment_initiation=LinkTokenCreateRequestPaymentInitiation(
-                payment_id=payment_id
-            )
-        )
-
-        if PLAID_REDIRECT_URI is not None:
-            linkRequest['redirect_uri'] = PLAID_REDIRECT_URI
-        linkResponse = client.link_token_create(linkRequest)
-        pretty_print_response(linkResponse.to_dict())
-        return JSONResponse(linkResponse.to_dict())
-    except plaid.ApiException as e:
-        raise HTTPException(status_code=400, detail=json.loads(e.body))
+        return JSONResponse({
+            'access_token': access_token,
+            'products': PLAID_PRODUCTS
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def json_serial(obj):
@@ -301,8 +260,11 @@ async def set_access_token(public_token: str = Form(...), current_user: User = D
 
 
 @app.get('/api/auth')
-async def get_auth():
+async def get_auth(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = AuthGetRequest(
             access_token=access_token
         )
@@ -367,8 +329,11 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
 
 
 @app.get('/api/identity')
-async def get_identity():
+async def get_identity(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = IdentityGetRequest(
             access_token=access_token
         )
@@ -388,8 +353,11 @@ async def get_identity():
 
 
 @app.get('/api/balance')
-async def get_balance():
+async def get_balance(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = AccountsBalanceGetRequest(
             access_token=access_token
         )
@@ -406,8 +374,11 @@ async def get_balance():
 
 
 @app.get('/api/accounts')
-async def get_accounts():
+async def get_accounts(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = AccountsGetRequest(
             access_token=access_token
         )
@@ -419,8 +390,11 @@ async def get_accounts():
         return JSONResponse(error_response)
 
 @app.get('/api/statements')
-async def statements():
+async def statements(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = StatementsListRequest(access_token=access_token)
         response = client.statements_list(request)
         pretty_print_response(response.to_dict())
@@ -451,8 +425,11 @@ async def statements():
 
 
 @app.get('/api/item')
-async def item():
+async def item(current_user: User = Depends(get_current_user)):
     try:
+        access_token = current_user.plaid_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Plaid access token not found for this user")
         request = ItemGetRequest(access_token=access_token)
         response = client.item_get(request)
         request = InstitutionsGetByIdRequest(

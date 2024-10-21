@@ -46,7 +46,7 @@ const App = () => {
       },
     });
     return { paymentInitiation, isUserTokenFlow };
-  }, [dispatch]);
+  }, [dispatch, jwtToken]);
 
   const generateUserToken = useCallback(async () => {
     const response = await fetch("api/create_user_token", { method: "POST" });
@@ -101,7 +101,7 @@ const App = () => {
       // Save the link_token to be used later in the Oauth flow.
       localStorage.setItem("link_token", data.link_token);
     },
-    [dispatch]
+    [dispatch, jwtToken]
   );
 
   useEffect(() => {
@@ -127,7 +127,7 @@ const App = () => {
     };
     init();
     }
-  }, [dispatch, generateToken, generateUserToken, getInfo]);
+  }, [dispatch, generateToken, generateUserToken, getInfo, jwtToken]);
 
   return (
     <div className="App">

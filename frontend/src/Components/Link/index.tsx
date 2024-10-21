@@ -16,7 +16,7 @@ const Link = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-            "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTcyOTIyNTU4Nn0.odvW6Fj6Rl8niGJeDEGNJFt8wGcjSN24wF-snQiWkfo`,
+            "Authorization": `Bearer ${jwtToken}`,
           },
           body: `public_token=${public_token}`,
         });

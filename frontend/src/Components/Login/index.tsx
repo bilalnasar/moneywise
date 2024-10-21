@@ -10,19 +10,25 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const endpoint = isRegistering ? '/register' : '/token';
-    const response = await fetch(`http://localhost:8000${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ username, password }),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      if (!isRegistering) {
-        dispatch({ type: 'SET_STATE', state: { jwtToken: data.access_token } });
+    try {
+      const response = await fetch(`http://localhost:8000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }),
+        credentials: 'include',  // Add this line
+      });
+      const data = await response.json();
+      if (response.ok) {
+        if (!isRegistering) {
+          dispatch({ type: 'SET_STATE', state: { jwtToken: data.access_token } });
+        }
+        setIsRegistering(false);
+      } else {
+        alert(data.detail || 'An error occurred');
       }
-      setIsRegistering(false);
-    } else {
-      alert(data.detail || 'An error occurred');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
     }
   };
 
