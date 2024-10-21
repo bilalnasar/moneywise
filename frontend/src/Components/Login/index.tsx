@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import Context from '../../Context';
+import styles from './index.module.scss'; 
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -15,7 +16,7 @@ const Login = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ username, password }),
-        credentials: 'include',  // Add this line
+        credentials: 'include',
       });
       const data = await response.json();
       if (response.ok) {
@@ -33,28 +34,38 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h2>{isRegistering ? 'Register' : 'Login'}</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
-        <button type="submit">{isRegistering ? 'Register' : 'Login'}</button>
-      </form>
-      <button onClick={() => setIsRegistering(!isRegistering)}>
-        {isRegistering ? 'Switch to Login' : 'Switch to Register'}
-      </button>
+    <div className={styles.loginContainer}>
+      <div className={styles.loginBox}>
+        <h2 className={styles.loginTitle}>
+          {isRegistering ? 'Moneywise' : 'Moneywise'}
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.inputField}>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              required
+            />
+          </div>
+          <div className={styles.inputField}>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+            />
+          </div>
+          <button type="submit" className={styles.loginButton}>
+            {isRegistering ? 'Register' : 'Login'}
+          </button>
+        </form>
+        <button onClick={() => setIsRegistering(!isRegistering)} className={styles.switchButton}>
+          {isRegistering ? 'Switch to Login' : 'Switch to Register'}
+        </button>
+      </div>
     </div>
   );
 };
