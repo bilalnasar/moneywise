@@ -1,4 +1,4 @@
-# Moneywise: Personal Finance Management App
+# Moneywise: A simpler budgeting app
 
 Since Mint shutdown last year, I've been thinking about build a financial planning app that allows users to connect their accounts, and have access to the most important features, such as net worth, spending, and more. Plaid stood out amongst other API providers because of its amazing developer resources and expansive suite of products. So here's Moneywise:
 
