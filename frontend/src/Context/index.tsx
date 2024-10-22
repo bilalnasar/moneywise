@@ -1,6 +1,6 @@
 import { createContext, useReducer, Dispatch, ReactNode } from "react";
 
-interface QuickstartState {
+interface State {
   linkSuccess: boolean;
   isItemAccess: boolean;
   isPaymentInitiation: boolean;
@@ -21,7 +21,7 @@ interface QuickstartState {
   jwtToken: string | null;
 }
 
-const initialState: QuickstartState = {
+const initialState: State = {
   linkSuccess: false,
   isItemAccess: true,
   isPaymentInitiation: false,
@@ -42,27 +42,27 @@ const initialState: QuickstartState = {
   jwtToken: null,
 };
 
-type QuickstartAction = {
+type Action = {
   type: "SET_STATE";
-  state: Partial<QuickstartState>;
+  state: Partial<State>;
 };
 
-interface QuickstartContext extends QuickstartState {
-  dispatch: Dispatch<QuickstartAction>;
+interface Context extends State {
+  dispatch: Dispatch<Action>;
 }
 
-const Context = createContext<QuickstartContext>(
-  initialState as QuickstartContext
+const Context = createContext<Context>(
+  initialState as Context
 );
 
 const { Provider } = Context;
-export const QuickstartProvider: React.FC<{ children: ReactNode }> = (
+export const MoneywiseProvider: React.FC<{ children: ReactNode }> = (
   props
 ) => {
   const reducer = (
-    state: QuickstartState,
-    action: QuickstartAction
-  ): QuickstartState => {
+    state: State,
+    action: Action
+  ): State => {
     switch (action.type) {
       case "SET_STATE":
         return { ...state, ...action.state };

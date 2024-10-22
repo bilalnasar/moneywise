@@ -14,20 +14,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from auth import User, get_current_user, authenticate_user, create_access_token, Token, pwd_context, SessionLocal
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form
 from fastapi.responses import JSONResponse
 import json
 from pydantic import BaseModel
 import plaid
-from plaid.model.payment_amount import PaymentAmount
-from plaid.model.payment_amount_currency import PaymentAmountCurrency
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
-from plaid.model.recipient_bacs_nullable import RecipientBACSNullable
-from plaid.model.payment_initiation_address import PaymentInitiationAddress
-from plaid.model.payment_initiation_recipient_create_request import PaymentInitiationRecipientCreateRequest
-from plaid.model.payment_initiation_payment_create_request import PaymentInitiationPaymentCreateRequest
-from plaid.model.link_token_create_request_payment_initiation import LinkTokenCreateRequestPaymentInitiation
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
@@ -53,12 +46,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
 PLAID_SECRET = os.getenv('PLAID_SECRET')
@@ -104,6 +96,12 @@ client = plaid_api.PlaidApi(api_client)
 products = []
 for product in PLAID_PRODUCTS:
     products.append(Products(product))
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (dt.datetime, dt.date)):  # Changed from datetime.datetime to dt.datetime
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 # We store the access_token in memory - in production, store it in a secure
@@ -162,14 +160,6 @@ async def info(current_user: User = Depends(get_current_user)):
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, (dt.datetime, dt.date)):  # Changed from datetime.datetime to dt.datetime
-        return obj.isoformat()
-    raise TypeError(f"Type {type(obj)} not serializable")
-
 
 @app.post('/api/create_link_token')
 async def create_link_token():
@@ -317,7 +307,8 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
         # Return the 8 most recent transactions
         latest_transactions = sorted(added, key=lambda t: t['date'])[-8:]
         return JSONResponse({
-            'latest_transactions': json.loads(json.dumps(latest_transactions, default=json_serial))
+            'latest_transactions': json.loads(json.dumps(latest_transactions, default=json_serial)),
+            'access_token': access_token
         })
 
     except plaid.ApiException as e:
@@ -447,25 +438,6 @@ async def item(current_user: User = Depends(get_current_user)):
     except plaid.ApiException as e:
         error_response = format_error(e)
         return JSONResponse(error_response)
-
-# Since this quickstart does not support webhooks, this function can be used to poll
-# an API that would otherwise be triggered by a webhook.
-# For a webhook example, see
-# https://github.com/plaid/tutorial-resources or
-# https://github.com/plaid/pattern
-async def poll_with_retries(request_callback, ms=1000, retries_left=20):
-    while retries_left > 0:
-        try:
-            return await request_callback()
-        except plaid.ApiException as e:
-            response = json.loads(e.body)
-            if response['error_code'] != 'PRODUCT_NOT_READY':
-                raise e
-            elif retries_left == 0:
-                raise Exception('Ran out of retries while polling') from e
-            else:
-                retries_left -= 1
-                await asyncio.sleep(ms / 1000)
 
 def pretty_print_response(response):
     print(json.dumps(response, indent=2, sort_keys=True, default=str))
