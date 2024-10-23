@@ -19,6 +19,7 @@ interface State {
     error_type: string;
   };
   jwtToken: string | null;
+  username: string | null;
 }
 
 const initialState: State = {
@@ -40,6 +41,7 @@ const initialState: State = {
     error_message: "",
   },
   jwtToken: null,
+  username: null,
 };
 
 type Action = {

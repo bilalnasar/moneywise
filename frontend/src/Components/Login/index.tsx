@@ -21,7 +21,7 @@ const Login = () => {
       const data = await response.json();
       if (response.ok) {
         if (!isRegistering) {
-          dispatch({ type: 'SET_STATE', state: { jwtToken: data.access_token } });
+          dispatch({ type: 'SET_STATE', state: { jwtToken: data.access_token, username: username } });
         }
         setIsRegistering(false);
       } else {

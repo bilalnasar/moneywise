@@ -53,4 +53,4 @@ I've currently configured the Plaid API to run in sandbox mode, so as of right n
 
 ## Acknowledgements
 
-I started this project based on the Plaid API Quickstart guide, which you can find [here](https://github.com/plaid/quickstart), which was originally built with Flask.
+I based the structure of this project on the Plaid API Quickstart guide, which you can find [here](https://github.com/plaid/quickstart), which was originally built with Flask.

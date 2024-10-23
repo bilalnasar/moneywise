@@ -1,0 +1,45 @@
+$white: #ffffff;
+$black200: #e0e0e0;
+$black600: #757575;
+$unit: 8px;
+$font-size-large: 18px;
+$font-size-normal: 16px;
+$font-size-small: 14px;
+
+.sidebar {
+    width: 250px;
+    height: 100vh; // This should already make it full height
+    min-height: 100vh; // Add this line
+    background-color: $white;
+    border-right: 1px solid $black200;
+    padding: $unit * 3;
+    display: flex;
+    flex-direction: column;
+    position: fixed; // Add this line
+    left: 0; // Add this line
+    top: 0; // Add this line
+    overflow-y: auto; // Add this line
+  }
+
+.welcome {
+  margin-bottom: $unit * 4;
+
+  h2 {
+    font-size: $font-size-large;
+    margin-bottom: $unit;
+  }
+
+  h3 {
+    font-size: $font-size-normal;
+    color: $black600;
+  }
+}
+
+.changeAccount {
+  margin-top: auto;
+
+  h4 {
+    font-size: $font-size-small;
+    margin-bottom: $unit * 2;
+  }
+}

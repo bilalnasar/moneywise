@@ -1,16 +1,15 @@
 import React, { useEffect, useContext, useCallback } from "react";
-
 import Header from "./Components/Headers";
 import Context from "./Context";
 import Login from "./Components/Login";
 import Dashboard from "./Components/Dashboard";
 import { Route, Routes, Navigate } from "react-router-dom";
-
 import styles from "./App.module.scss";
+import Sidebar from "./Components/Sidebar";
+
 
 const App = () => {
-  const { linkSuccess, isPaymentInitiation, dispatch, jwtToken } =
-    useContext(Context);
+  const { linkSuccess, dispatch, jwtToken, accessToken } = useContext(Context);
 
   const getInfo = useCallback(async () => {
     const response = await fetch("/api/info", { 
@@ -21,56 +20,47 @@ const App = () => {
     });
     if (!response.ok) {
       dispatch({ type: "SET_STATE", state: { backend: false } });
-      return { paymentInitiation: false };
+      return;
     }
     const data = await response.json();
-    const paymentInitiation: boolean =
-      data.products.includes("payment_initiation");
     dispatch({
       type: "SET_STATE",
       state: {
         products: data.products,
-        isPaymentInitiation: paymentInitiation,
+        accessToken: data.access_token,
       },
     });
-    return { paymentInitiation };
   }, [dispatch, jwtToken]);
 
-  const generateToken = useCallback(
-    async (isPaymentInitiation) => {
-      const path = isPaymentInitiation
-        ? "/api/create_link_token_for_payment"
-        : "/api/create_link_token";
-      const response = await fetch(path, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        dispatch({ type: "SET_STATE", state: { linkToken: null } });
+  const generateToken = useCallback(async () => {
+    const response = await fetch("/api/create_link_token", {
+      method: "POST",
+    });
+    if (!response.ok) {
+      dispatch({ type: "SET_STATE", state: { linkToken: null } });
+      return;
+    }
+    const data = await response.json();
+    if (data) {
+      if (data.error != null) {
+        dispatch({
+          type: "SET_STATE",
+          state: {
+            linkToken: null,
+            linkTokenError: data.error,
+          },
+        });
         return;
       }
-      const data = await response.json();
-      if (data) {
-        if (data.error != null) {
-          dispatch({
-            type: "SET_STATE",
-            state: {
-              linkToken: null,
-              linkTokenError: data.error,
-            },
-          });
-          return;
-        }
-        dispatch({ type: "SET_STATE", state: { linkToken: data.link_token } });
-      }
-      localStorage.setItem("link_token", data.link_token);
-    },
-    [dispatch]
-  );
+      dispatch({ type: "SET_STATE", state: { linkToken: data.link_token } });
+    }
+    localStorage.setItem("link_token", data.link_token);
+  }, [dispatch]);
 
   useEffect(() => {
     if (jwtToken) {
       const init = async () => {
-        const { paymentInitiation } = await getInfo();
+        await getInfo();
         if (window.location.href.includes("?oauth_state_id=")) {
           dispatch({
             type: "SET_STATE",
@@ -80,7 +70,7 @@ const App = () => {
           });
           return;
         }
-        generateToken(paymentInitiation);
+        generateToken();
       };
       init();
     }
@@ -92,12 +82,16 @@ const App = () => {
 
   return (
     <div className={styles.App}>
-      <Header />
-      <div className={styles.container}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+      <Sidebar />
+      <div className={styles.mainContent}>
+        {!accessToken ? (
+          <Header />
+        ) : (
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        )}
       </div>
     </div>
   );
