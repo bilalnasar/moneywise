@@ -30,6 +30,7 @@ class User(Base):
     total_balance = Column(Float, default=0.0)
     plaid_access_token = Column(String, nullable=True)
     plaid_user_token = Column(String, nullable=True)
+    plaid_item_id = Column(String, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 

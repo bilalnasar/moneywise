@@ -95,7 +95,6 @@ def json_serial(obj):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
-item_id = None
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -192,7 +191,6 @@ async def create_user_token(current_user: User = Depends(get_current_user)):
 
 @app.post('/api/set_access_token')
 async def set_access_token(public_token: str = Form(...), current_user: User = Depends(get_current_user)):
-    global item_id
     db = None
     try:
         exchange_request = ItemPublicTokenExchangeRequest(
@@ -204,6 +202,7 @@ async def set_access_token(public_token: str = Form(...), current_user: User = D
         db = SessionLocal()
         db_user = db.query(User).filter(User.id == current_user.id).first()
         db_user.plaid_access_token = access_token
+        db_user.plaid_item_id = item_id
         db.commit()
         db.refresh(db_user)
 
