@@ -1,12 +1,3 @@
-/* Add this at the top of your app.scss */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* Your existing styles */
 $threads-font-path: "~plaid-threads/fonts";
 @import "~plaid-threads/scss/typography";
 @import "~plaid-threads/scss/variables";
@@ -15,12 +6,25 @@ $threads-font-path: "~plaid-threads/fonts";
   box-sizing: border-box;
 }
 
-.container {
+body {
+  font-size: 16px;
+  line-height: 1.5;
+  color: $black900;
+  background-color: $black100;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  min-width: 70 * $unit;
-  max-width: 120 * $unit;
+}
+
+.container {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
   margin: 0 auto;
-  overflow: hidden;
+  width: 100%;
 }

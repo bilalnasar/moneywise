@@ -1,71 +1,54 @@
 @import "~plaid-threads/scss/variables";
 
+.container {
+  width: 100%;
+  padding: 0 $unit * 4;
+  box-sizing: border-box;
+}
+
 .grid {
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  margin: auto;
-  margin-bottom: 2 * $unit;
+  align-items: center;
+  text-align: center;
 }
 
 .title {
-  margin-top: 9 * $unit;
-  margin-bottom: 0;
+  margin-top: $unit * 6;
+  margin-bottom: $unit * 2;
   font-weight: 800;
-  height: 6 * $unit;
+  font-size: $unit * 4;
 }
 
 .subtitle {
   margin-top: 0;
-  margin-bottom: 3 * $unit;
-}
-
-.introPar {
-  width: 100%;
-  font-size: 2 * $unit;
-  margin: 2 * $unit 0;
+  margin-bottom: $unit * 3;
+  font-size: $unit * 2.5;
 }
 
 .linkButton {
-  margin-top: 3 * $unit;
+  margin-top: $unit * 3;
 }
 
-.itemAccessContainer {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-  width: 100%;
-  box-shadow: $shadow-small;
-  margin-top: 3 * $unit;
-  border-radius: 2px;
+.confirmation {
+  font-size: $unit * 2;
+  margin-top: $unit * 2;
 }
 
-.itemAccessRow {
-  display: flex;
-  border: 1px solid $black200;
-  height: 50%;
-  margin: 0;
-
-  &:last-child {
-    border-top: 0px;
+// Responsive adjustments
+@media (max-width: 600px) {
+  .container {
+    padding: 0 $unit * 2;
   }
-}
 
-.idName {
-  padding: 2 * $unit 3 * $unit 2 * $unit 5 * $unit;
-  flex: 1;
-  font-weight: bold;
-  font-family: $font-stack-monospace;
-  color: $black1000;
-}
+  .title {
+    font-size: $unit * 3;
+  }
 
-.tokenText {
-  padding: 2 * $unit 3 * $unit 2 * $unit 0;
-  flex: 5;
-  font-family: $font-stack-monospace;
-}
-
-.requests {
-  margin-top: 7 * $unit;
-  font-size: 2 * $unit;
+  .subtitle {
+    font-size: $unit * 2;
+  }
 }
