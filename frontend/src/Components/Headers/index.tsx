@@ -8,7 +8,7 @@ import styles from "./index.module.scss";
 const Header = () => {
   const {
     linkToken,
-    linkSuccess,
+    accessToken,
     backend,
     isItemAccess,
   } = useContext(Context);
@@ -18,7 +18,7 @@ const Header = () => {
       <div className={styles.grid}>
         <h3 className={styles.title}>Moneywise</h3>
 
-        {!linkSuccess ? (
+        {!accessToken ? (
           <>
             <h4 className={styles.subtitle}>
               Connect your bank account with Plaid

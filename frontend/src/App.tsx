@@ -7,9 +7,8 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import styles from "./App.module.scss";
 import Sidebar from "./Components/Sidebar";
 
-
 const App = () => {
-  const { linkSuccess, dispatch, jwtToken, accessToken } = useContext(Context);
+  const { dispatch, jwtToken, accessToken } = useContext(Context);
 
   const getInfo = useCallback(async () => {
     const response = await fetch("/api/info", { 
@@ -52,7 +51,7 @@ const App = () => {
         });
         return;
       }
-      dispatch({ type: "SET_STATE", state: { linkToken: data.link_token, linkSuccess: true } });
+      dispatch({ type: "SET_STATE", state: { linkToken: data.link_token } });
     }
     localStorage.setItem("link_token", data.link_token);
   }, [dispatch]);
@@ -61,20 +60,13 @@ const App = () => {
     if (jwtToken) {
       const init = async () => {
         await getInfo();
-        if (window.location.href.includes("?oauth_state_id=")) {
-          dispatch({
-            type: "SET_STATE",
-            state: {
-              linkToken: localStorage.getItem("link_token"),
-            },
-          });
-          return;
+        if (!accessToken) {
+          generateToken();
         }
-        generateToken();
       };
       init();
     }
-  }, [dispatch, generateToken, getInfo, jwtToken]);
+  }, [dispatch, generateToken, getInfo, jwtToken, accessToken]);
 
   if (!jwtToken) {
     return <Login />;
