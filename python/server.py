@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Form
 from fastapi.responses import JSONResponse
 import json
-from pydantic import BaseModel
 import plaid
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
@@ -43,6 +42,7 @@ load_dotenv()
 
 app = FastAPI()
 
+# Allow requests from the frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -51,6 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Plaid configuration, please check that you have the correct values in your .env file
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
 PLAID_SECRET = os.getenv('PLAID_SECRET')
 PLAID_ENV = os.getenv('sandbox')
@@ -85,10 +86,13 @@ configuration = plaid.Configuration(
 api_client = plaid.ApiClient(configuration)
 client = plaid_api.PlaidApi(api_client)
 
+# If your financial institution doesn't support all of the products below, you cannot use them.
 products = []
 for product in PLAID_PRODUCTS:
     products.append(Products(product))
 
+# I had to add this to handle the datetime objects returned by Plaid,
+#  since the default json serializer doesn't know what to do with them.
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, (dt.datetime, dt.date)):  # Changed from datetime.datetime to dt.datetime
@@ -98,6 +102,9 @@ def json_serial(obj):
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Authenticate user and return a JWT token
+    """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -110,6 +117,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.post("/register")
 async def register(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Register a new user and add them to the database. This does not generate a JWT token.
+
+    """
+
     db = SessionLocal()
     user = db.query(User).filter(User.username == form_data.username).first()
     if user:
@@ -124,6 +136,9 @@ async def register(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.post("/api/info")
 async def info(current_user: User = Depends(get_current_user)):
+    """
+    Returns the user's Plaid access token and currently supported products
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -138,6 +153,11 @@ async def info(current_user: User = Depends(get_current_user)):
 
 @app.post('/api/create_link_token')
 async def create_link_token():
+    """
+    Create a Plaid link token for the user to initiate a Link session. This is a temporary token.
+
+    Returns the link token, which can be used in the frontend to initiate a Link session
+    """
     try:
         request = LinkTokenCreateRequest(
             products=products,
@@ -158,16 +178,20 @@ async def create_link_token():
             request['statements'] = statements
 
 
-        # create link token
         response = client.link_token_create(request)
         return JSONResponse(json.loads(json.dumps(response.to_dict(), default=json_serial)))
     except plaid.ApiException as e:
         print(e)
         raise HTTPException(status_code=e.status, detail=json.loads(e.body))
-# Create a user token which can be used for Plaid Check, Income, or Multi-Item link flows
-# https://plaid.com/docs/api/users/#usercreate
+    
+
 @app.post('/api/create_user_token')
 async def create_user_token(current_user: User = Depends(get_current_user)):
+    """
+    Create a Plaid user token which can be used for Plaid Check, Income, or Multi-Item link flows.
+
+    This endpoint is not currently used in the frontend.
+    """
     db = None
     try:
         user_create_request = UserCreateRequest(
@@ -191,6 +215,12 @@ async def create_user_token(current_user: User = Depends(get_current_user)):
 
 @app.post('/api/set_access_token')
 async def set_access_token(public_token: str = Form(...), current_user: User = Depends(get_current_user)):
+    """
+    This sets the user's Plaid access token and item ID after they have successfully completed the Link flow. This endpoint is called by Plaid's SDK, since
+    it requires the public token returned by a successful Link session.
+
+    To clarify, this is the token that allows you to make API calls to Plaid on behalf of the user, and is persistent.
+    """
     db = None
     try:
         exchange_request = ItemPublicTokenExchangeRequest(
@@ -213,12 +243,14 @@ async def set_access_token(public_token: str = Form(...), current_user: User = D
         db.close()
 
 
-# Retrieve ACH or ETF account numbers for an Item
-# https://plaid.com/docs/#auth
-
-
 @app.get('/api/auth')
 async def get_auth(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve ACH or ETF account numbers for an Item to use for cheques, transfers, etc.
+
+    This can only be used with checking or savings accounts.
+
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -234,12 +266,13 @@ async def get_auth(current_user: User = Depends(get_current_user)):
         return JSONResponse(error_response)
 
 
-# Retrieve Transactions for an Item
-# https://plaid.com/docs/#transactions
-
-
 @app.get('/api/transactions')
 async def get_transactions(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve transactions for an Item.
+
+    This endpoint is called by Plaid's SDK.
+    """
     # Set cursor to empty to receive all historical updates
     cursor = ''
 
@@ -283,12 +316,13 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
         error_response = format_error(e)
         return JSONResponse(error_response)
 
-# Retrieve Identity data for an Item
-# https://plaid.com/docs/#identity
-
-
 @app.get('/api/identity')
 async def get_identity(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve identity data for an Item. This can include email addresses, phone numbers, and addresses.
+
+    This endpoint is called by Plaid's SDK.
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -306,13 +340,11 @@ async def get_identity(current_user: User = Depends(get_current_user)):
         error_response = format_error(e)
         return JSONResponse(error_response)
 
-
-# Retrieve real-time balance data for each of an Item's accounts
-# https://plaid.com/docs/#balance
-
-
 @app.get('/api/balance')
 async def get_balance(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve real-time balance data for each of an Item's accounts.
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -328,12 +360,11 @@ async def get_balance(current_user: User = Depends(get_current_user)):
         return JSONResponse(error_response)
 
 
-# Retrieve an Item's accounts
-# https://plaid.com/docs/#accounts
-
-
 @app.get('/api/accounts')
 async def get_accounts(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve high-level information about an Item. Including the account's name, currency, and type.
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -350,6 +381,11 @@ async def get_accounts(current_user: User = Depends(get_current_user)):
 
 @app.get('/api/statements')
 async def statements(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve statements for an Item. The statements/download request retrieves a single
+    PDF statement in binary form.
+
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
@@ -377,14 +413,11 @@ async def statements(current_user: User = Depends(get_current_user)):
         return JSONResponse(error_response)
 
 
-
-
-# Retrieve high-level information about an Item
-# https://plaid.com/docs/#retrieve-item
-
-
 @app.get('/api/item')
 async def item(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve information about an Item, which can include item_id, institution_id, etc.
+    """
     try:
         access_token = current_user.plaid_access_token
         if not access_token:

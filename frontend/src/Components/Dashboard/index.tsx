@@ -78,6 +78,11 @@ const Dashboard = () => {
       </div>
       <div className={styles.transactionList}>
         <h2>Recent Transactions</h2>
+        <div className={styles.transactionHeader}>
+          <span>Item</span>
+          <span>Amount</span>
+          <span>Date</span>
+        </div>
         {transactions.map((transaction, index) => (
           <div key={index} className={styles.transactionItem}>
             <span>{transaction.name}</span>

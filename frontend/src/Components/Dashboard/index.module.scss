@@ -56,8 +56,24 @@
   }
 }
 
+.transactionHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  font-weight: bold;
+  padding: 10px 0;
+  border-bottom: 2px solid $black200;
+  margin-bottom: 10px;
+}
+
 .transactionItem {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid $black200;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
