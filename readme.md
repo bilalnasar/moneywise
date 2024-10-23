@@ -4,6 +4,9 @@ Since Mint shutdown last year, I've been thinking about build a financial planni
 
 Moneywise is a full-stack personal finance management web app that allows users to connect their bank accounts, view their total balances, and track their transactions. Built with React, FastAPI, and the Plaid API, this app can help users manage their finances securely and effectively.
 
+![image](https://github.com/user-attachments/assets/9aafc21c-d2b3-4942-9e22-add5b8383e01)
+
+
 ## Features
 
 - User authentication and registration
