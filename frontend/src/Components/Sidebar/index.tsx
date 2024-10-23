@@ -1,10 +1,17 @@
 import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Link from '../Link';
 import Context from '../../Context';
 import styles from './index.module.scss';
 
 const Sidebar = () => {
-  const { linkSuccess, username } = useContext(Context);
+  const { linkSuccess, username, logout } = useContext(Context);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className={styles.sidebar}>
@@ -15,6 +22,11 @@ const Sidebar = () => {
       <div className={styles.changeAccount}>
         <p>Want to connect a different account?</p>
         <Link isSmall />
+      </div>
+      <div className={styles.logoutContainer}>
+        <button onClick={handleLogout} className={styles.logoutButton}>
+          Logout
+        </button>
       </div>
     </div>
   );

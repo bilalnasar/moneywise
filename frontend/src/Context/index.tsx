@@ -51,6 +51,7 @@ type Action = {
 
 interface Context extends State {
   dispatch: Dispatch<Action>;
+  logout: () => void;
 }
 
 const Context = createContext<Context>(
@@ -73,7 +74,12 @@ export const MoneywiseProvider: React.FC<{ children: ReactNode }> = (
     }
   };
   const [state, dispatch] = useReducer(reducer, initialState);
-  return <Provider value={{ ...state, dispatch }}>{props.children}</Provider>;
+
+  const logout = () => {
+    dispatch({ type: "SET_STATE", state: { jwtToken: null, username: null } });
+  };
+
+  return <Provider value={{ ...state, dispatch, logout }}>{props.children}</Provider>;
 };
 
 export default Context;

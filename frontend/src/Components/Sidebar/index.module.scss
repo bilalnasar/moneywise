@@ -1,6 +1,7 @@
 $white: #ffffff;
 $black200: #e0e0e0;
 $black600: #757575;
+$light-gray: #f5f5f5;
 $unit: 8px;
 $font-size-large: 18px;
 $font-size-normal: 16px;
@@ -12,7 +13,6 @@ $font-size-small: 14px;
   min-height: 100vh;
   background-color: $white;
   border-right: 1px solid $black200;
-  padding: $unit * 3;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -22,7 +22,9 @@ $font-size-small: 14px;
 }
 
 .welcome {
-  margin-bottom: $unit * 4;
+  background-color: $light-gray;
+  padding: $unit * 3;
+  border-bottom: 1px solid $black200;
 
   h2 {
     font-size: $font-size-large;
@@ -36,7 +38,7 @@ $font-size-small: 14px;
 }
 
 .changeAccount {
-  margin-top: $unit * 2;
+  padding: $unit * 3;
 
   p {
     font-size: $font-size-small;
@@ -44,3 +46,35 @@ $font-size-small: 14px;
     margin-bottom: $unit * 2;
   }
 }
+
+// ... existing styles ...
+
+
+.logoutContainer {
+    margin-top: auto;
+    padding: $unit * 3;
+    border-top: 1px solid $black200;
+  }
+  
+  .logoutButton {
+    width: 100%;
+    padding: $unit * 1.5;
+    background-color: #2c2c2c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: $font-size-normal;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+    &:hover {
+      background-color: #3a3a3a;
+    }
+  
+    &:active {
+      transform: translateY(1px);
+    }
+  }
