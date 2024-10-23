@@ -12,37 +12,37 @@ from dotenv import load_dotenv
 from typing import Optional
 
 
-# Database setup
+# Get our environment variables
 load_dotenv()
 
+# Set up our database session
 password = os.getenv('PG_PASSWORD')
 SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@localhost:5432/postgres"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# User model
+# Pydantic User model. Necessary to use for the api and SQLAlchemy.
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    total_balance = Column(Float, default=0.0)
     plaid_access_token = Column(String, nullable=True)
     plaid_user_token = Column(String, nullable=True)
     plaid_item_id = Column(String, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 
-# Password hashing
+# Password hashing with the bcrypt algorithm
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
+# JWT settings, 30 minutes expiration
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Pydantic models
+# Further Pydantic models for the JWT token, note that access_token here is referring to the JWT token
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -50,7 +50,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-# JWT token creation
+# Function called from the api, which creates the JWT token by encoding the data with the secret key and algorithm. Uses the jwt library from python-jose.
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -58,25 +58,30 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-# Password verification
+# Function to verify the password against the hashed password using the bcrypt algorithm.
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-# Get user from database
+# Function to get the user from the database session based on the username.
 def get_user(username: str):
     db = SessionLocal()
     return db.query(User).filter(User.username == username).first()
 
-# Authenticate user
+# Authenticate works by getting the user from the database, and then verifying the password against the hashed password.
 def authenticate_user(username: str, password: str):
     user = get_user(username)
     if not user or not verify_password(password, user.hashed_password):
         return False
     return user
 
-# Get current user
+# Function to get the current user from the JWT token.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
+# This works by using the fatstapi bearer token dependency, upon extracting the jwt token 
+# from every request. It then decodes the token with the secret key and algorithm, and then
+# verifies that the username is in the database. If any of these steps fail, it raises an
+# unauthorized exception. If it passes, it returns the user.
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
