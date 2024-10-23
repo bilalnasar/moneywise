@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import Context from '../../Context';
 import styles from "./index.module.scss";
+import PieChart from '../Piechart/Piechart';
 
 interface Account {
   account_id: string;
@@ -28,9 +29,14 @@ interface TransactionData {
   date: string;
 }
 
+interface CategoryTotal {
+  [category: string]: number;
+}
+
 const Dashboard = () => {
   const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null);
   const [transactions, setTransactions] = useState<TransactionData[]>([]);
+  const [categoryTotals, setCategoryTotals] = useState<CategoryTotal>({});
   const { jwtToken } = useContext(Context);
 
   useEffect(() => {
@@ -51,6 +57,12 @@ const Dashboard = () => {
         });
         const transactionsData = await transactionsResponse.json();
         setTransactions(transactionsData.latest_transactions);
+        const totals: CategoryTotal = {};
+        transactionsData.latest_transactions.forEach((transaction: any) => {
+          const category = transaction.category[0];
+          totals[category] = (totals[category] || 0) + transaction.amount;
+        });
+        setCategoryTotals(totals);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -90,6 +102,11 @@ const Dashboard = () => {
             <span>{transaction.date}</span>
           </div>
         ))}
+      </div>
+
+      <div className={styles.categoryChart}>
+        <h2>Spending by Category</h2>
+        <PieChart data={categoryTotals} />
       </div>
     </div>
   );
