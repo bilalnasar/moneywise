@@ -1,10 +1,14 @@
 import React, { useEffect, useContext } from "react";
 import { usePlaidLink } from "react-plaid-link";
-import Button from "plaid-threads/Button";
+import Button, { styles } from "plaid-threads/Button";
 
 import Context from "../../Context";
 
-const Link = () => {
+interface LinkProps {
+  isSmall?: boolean;
+}
+
+const Link: React.FC<LinkProps> = ({ isSmall = false }) => {
   const { linkToken, isPaymentInitiation, isCraProductsExclusively, dispatch, jwtToken } =
     useContext(Context);
 
@@ -80,9 +84,14 @@ const Link = () => {
   }, [ready, open, isOauth]);
 
   return (
-    <Button type="button" large onClick={() => open()} disabled={!ready}>
-      Launch Link
-    </Button>
+    <button
+      type="button"
+      className={isSmall ? styles.smallButton : styles.largeButton}
+      onClick={() => open()}
+      disabled={!ready}
+    >
+      {isSmall ? "Connect" : "Launch Link"}
+    </button>
   );
 };
 

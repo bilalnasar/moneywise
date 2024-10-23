@@ -12,12 +12,10 @@ const Sidebar = () => {
         <h2>Welcome,</h2>
         <h3>{username}</h3>
       </div>
-      {linkSuccess && (
-        <div className={styles.changeAccount}>
-          <h4>Change your account</h4>
-          <Link />
-        </div>
-      )}
+      <div className={styles.changeAccount}>
+        <p>Want to connect a different account?</p>
+        <Link isSmall />
+      </div>
     </div>
   );
 };

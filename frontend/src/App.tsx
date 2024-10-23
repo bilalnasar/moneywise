@@ -52,7 +52,7 @@ const App = () => {
         });
         return;
       }
-      dispatch({ type: "SET_STATE", state: { linkToken: data.link_token } });
+      dispatch({ type: "SET_STATE", state: { linkToken: data.link_token, linkSuccess: true } });
     }
     localStorage.setItem("link_token", data.link_token);
   }, [dispatch]);
