@@ -1,3 +1,12 @@
+/* Add this at the top of your app.scss */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Your existing styles */
 $threads-font-path: "~plaid-threads/fonts";
 @import "~plaid-threads/scss/typography";
 @import "~plaid-threads/scss/variables";
@@ -13,4 +22,5 @@ $threads-font-path: "~plaid-threads/fonts";
   min-width: 70 * $unit;
   max-width: 120 * $unit;
   margin: 0 auto;
+  overflow: hidden;
 }

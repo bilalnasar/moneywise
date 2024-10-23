@@ -9,10 +9,9 @@ import { Route, Routes, Navigate } from "react-router-dom";
 
 
 import styles from "./App.module.scss";
-import { CraCheckReportProduct } from "plaid";
 
 const App = () => {
-  const { linkSuccess, isPaymentInitiation, itemId, dispatch, jwtToken } =
+  const { linkSuccess, isPaymentInitiation, dispatch, jwtToken } =
     useContext(Context);
 
   const getInfo = useCallback(async () => {
@@ -29,23 +28,14 @@ const App = () => {
     const data = await response.json();
     const paymentInitiation: boolean =
       data.products.includes("payment_initiation");
-    const craEnumValues = Object.values(CraCheckReportProduct);
-    const isUserTokenFlow: boolean = data.products.some(
-      (product: CraCheckReportProduct) => craEnumValues.includes(product)
-    );
-    const isCraProductsExclusively: boolean = data.products.every(
-      (product: CraCheckReportProduct) => craEnumValues.includes(product)
-    );
     dispatch({
       type: "SET_STATE",
       state: {
         products: data.products,
         isPaymentInitiation: paymentInitiation,
-        isCraProductsExclusively: isCraProductsExclusively,
-        isUserTokenFlow: isUserTokenFlow,
       },
     });
-    return { paymentInitiation, isUserTokenFlow };
+    return { paymentInitiation };
   }, [dispatch, jwtToken]);
 
   const generateUserToken = useCallback(async () => {
@@ -107,7 +97,7 @@ const App = () => {
   useEffect(() => {
     if (jwtToken) {
     const init = async () => {
-      const { paymentInitiation, isUserTokenFlow } = await getInfo(); // used to determine which path to take when generating token
+      const { paymentInitiation } = await getInfo(); // used to determine which path to take when generating token
       // do not generate a new token for OAuth redirect; instead
       // setLinkToken from localStorage
       if (window.location.href.includes("?oauth_state_id=")) {
@@ -118,10 +108,6 @@ const App = () => {
           },
         });
         return;
-      }
-
-      if (isUserTokenFlow) {
-        await generateUserToken();
       }
       generateToken(paymentInitiation);
     };

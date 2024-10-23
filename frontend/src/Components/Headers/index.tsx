@@ -50,7 +50,7 @@ const Header = () => {
               <div>
                 Unable to fetch link_token: please make sure your backend server
                 is running and that your .env file has been configured
-                correctly.
+                correctly. Backend is running, but linkToken not found.
               </div>
               <div>
                 If you are on a Windows machine, please ensure that you have

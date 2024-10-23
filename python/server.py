@@ -1,4 +1,3 @@
-# Read env vars from .env file
 import asyncio
 import base64
 import os
@@ -72,13 +71,6 @@ if PLAID_ENV == 'sandbox':
 if PLAID_ENV == 'production':
     host = plaid.Environment.Production
 
-# Parameters used for the OAuth redirect Link flow.
-#
-# Set PLAID_REDIRECT_URI to 'http://localhost:3000/'
-# The OAuth redirect flow requires an endpoint on the developer's website
-# that the bank website should redirect to. You will need to configure
-# this redirect URI for your client ID through the Plaid developer dashboard
-# at https://dashboard.plaid.com/team/api.
 PLAID_REDIRECT_URI = empty_to_none('PLAID_REDIRECT_URI')
 
 configuration = plaid.Configuration(
@@ -102,22 +94,6 @@ def json_serial(obj):
     if isinstance(obj, (dt.datetime, dt.date)):  # Changed from datetime.datetime to dt.datetime
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
-
-
-# We store the access_token in memory - in production, store it in a secure
-# persistent data store.
-# access_token = None
-# # The payment_id is only relevant for the UK Payment Initiation product.
-# # We store the payment_id in memory - in production, store it in a secure
-# # persistent data store.
-# payment_id = None
-# # The transfer_id is only relevant for Transfer ACH product.
-# # We store the transfer_id in memory - in production, store it in a secure
-# # persistent data store.
-# transfer_id = None
-# # We store the user_token in memory - in production, store it in a secure
-# # persistent data store.
-# user_token = None
 
 item_id = None
 
@@ -152,7 +128,7 @@ async def info(current_user: User = Depends(get_current_user)):
     try:
         access_token = current_user.plaid_access_token
         if not access_token:
-            raise HTTPException(status_code=400, detail=f"Plaid access token not found for user {current_user.username}")
+            access_token = None
         
         return JSONResponse({
             'access_token': access_token,
@@ -163,7 +139,6 @@ async def info(current_user: User = Depends(get_current_user)):
 
 @app.post('/api/create_link_token')
 async def create_link_token():
-    global user_token
     try:
         request = LinkTokenCreateRequest(
             products=products,
@@ -183,13 +158,7 @@ async def create_link_token():
             )
             request['statements'] = statements
 
-        cra_products = ["cra_base_report", "cra_income_insights", "cra_partner_insights"]
-        if any(product in cra_products for product in PLAID_PRODUCTS):
-            request['user_token'] = user_token
-            request['consumer_report_permissible_purpose'] = ConsumerReportPermissiblePurpose('ACCOUNT_REVIEW_CREDIT')
-            request['cra_options'] = LinkTokenCreateRequestCraOptions(
-                days_requested=60
-            )
+
         # create link token
         response = client.link_token_create(request)
         return JSONResponse(json.loads(json.dumps(response.to_dict(), default=json_serial)))
@@ -199,8 +168,8 @@ async def create_link_token():
 # Create a user token which can be used for Plaid Check, Income, or Multi-Item link flows
 # https://plaid.com/docs/api/users/#usercreate
 @app.post('/api/create_user_token')
-async def create_user_token():
-    global user_token
+async def create_user_token(current_user: User = Depends(get_current_user)):
+    db = None
     try:
         user_create_request = UserCreateRequest(
             # Typically this will be a user ID number from your application. 
@@ -208,22 +177,22 @@ async def create_user_token():
         )
         user_response = client.user_create(user_create_request)
         user_token = user_response['user_token']
+
+        db = SessionLocal()
+        db_user = db.query(User).filter(User.id == current_user.id).first()
+        db_user.plaid_user_token = user_token
+        db.commit()
+        db.refresh(db_user)
+        db.close()
         return JSONResponse(user_response.to_dict())
     except plaid.ApiException as e:
         print(e)
         raise HTTPException(status_code=e.status, detail=json.loads(e.body))
 
 
-# Exchange token flow - exchange a Link public_token for
-# an API access_token
-# https://plaid.com/docs/#exchange-token-flow
-
-
 @app.post('/api/set_access_token')
 async def set_access_token(public_token: str = Form(...), current_user: User = Depends(get_current_user)):
-    global access_token
     global item_id
-    global transfer_id
     db = None
     try:
         exchange_request = ItemPublicTokenExchangeRequest(

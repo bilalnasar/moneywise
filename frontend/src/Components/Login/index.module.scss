@@ -2,12 +2,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    height: 100vh; // Add this line
+    height: 100vh;
     background-color: #f4f4f4;
-    padding: 0; /* Remove padding */
-    margin: 0; /* Remove margin */
-    overflow: hidden; /* Prevent scrolling */
+    overflow: hidden;
   }
   
   .loginBox {
@@ -16,25 +13,19 @@
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     width: 350px;
-    overflow: hidden;
-
+    max-height: 100vh;
+    overflow-y: auto;
   }
   
   .loginTitle {
     text-align: center;
     margin-bottom: 20px;
     color: #333;
-    font-family: 'Proxima Nova', sans-serif; // Uncomment this line
-    max-height: 100vh; // Add this line
-    overflow-y: auto; // Add this line
-    overflow: hidden;
-
+    font-family: 'Proxima Nova', sans-serif;
   }
   
   .inputField {
     margin-bottom: 15px;
-    overflow: hidden;
-
   }
   
   .inputField input {
@@ -43,15 +34,11 @@
     border: 1px solid #ddd;
     border-radius: 3px;
     box-sizing: border-box;
-    overflow: hidden;
-
   }
   
   .inputField input:focus {
     outline: none;
     border-color: #007bff;
-    overflow: hidden;
-
   }
   
   .loginButton {
@@ -62,14 +49,10 @@
     border-radius: 3px;
     cursor: pointer;
     width: 100%;
-    overflow: hidden;
-
   }
   
   .loginButton:hover {
     background-color: #0069d9;
-    overflow: hidden;
-
   }
   
   .switchButton {
@@ -81,12 +64,8 @@
     cursor: pointer;
     margin-top: 15px;
     width: 100%;
-    overflow: hidden;
-
   }
   
   .switchButton:hover {
     background-color: #ddd;
-    overflow: hidden;
-
   }
